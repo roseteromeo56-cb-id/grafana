@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -e
 # ver=$(cat ${GRAFANA_DIR}/package.json | jq -r .version | sed -E "s/$/-/" | sed -E "s/-.*/-${DRONE_BUILD_NUMBER}/")
 local_dir="${DRONE_WORKSPACE}/dist"
@@ -29,8 +29,13 @@ dagger run --silent go run ./pkg/build/cmd package publish \
 #   --destination="${CDN_DESTINATION}/${ver}/public"
 
 # Publish only the linux/amd64 edition npm packages to npm
+npm_packages=()
+while IFS= read -r package; do
+  npm_packages+=("--package=file://$package")
+done < <(find "$local_dir" | grep tar.gz | grep linux | grep amd64 | grep -v sha256 | grep -v docker)
+
 dagger run --silent go run ./pkg/build/cmd npm publish \
-  $(find $local_dir | grep tar.gz | grep linux | grep amd64 | grep -v sha256 | grep -v docker | awk '{print "--package=file://"$0}') \
+  "${npm_packages[@]}" \
   --token=${NPM_TOKEN} \
   --tag="nightly"
 
