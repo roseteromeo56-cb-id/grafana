@@ -8,6 +8,6 @@ exit_if_fail time go install ./pkg/cmd/grafana-server
 
 echo "running go test"
 set -e
-time for d in $(go list ./pkg/...); do
+time for d in "$(go list ./pkg/...)"; do
   exit_if_fail go test -tags=integration -covermode=atomic "$d"
 done
