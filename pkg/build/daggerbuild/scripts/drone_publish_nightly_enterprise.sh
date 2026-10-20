@@ -3,12 +3,18 @@ set -e
 local_dir="${DRONE_WORKSPACE}/dist"
 
 # Publish the docker images present in the bucket
-dagger run --silent go run ./pkg/build/cmd docker publish \
-  "$(find $local_dir | grep docker.tar.gz | grep -v sha256 | awk '{print "--package=file://"$0}')" \
+find "$local_dir" | grep docker.tar.gz | grep -v sha256 | {
+  set --
+  while IFS= read -r archive; do
+    set -- "$@" "--package=file://$archive"
+  done
+  dagger run --silent go run ./pkg/build/cmd docker publish \
+    "$@" \
   --username=${DOCKER_USERNAME} \
   --password=${DOCKER_PASSWORD} \
   --latest \
   --repo="grafana-enterprise-dev"
+}
 
 # Publish packages to the downloads bucket
 dagger run --silent go run ./pkg/build/cmd package publish \
